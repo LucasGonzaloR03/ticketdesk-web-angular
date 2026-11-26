@@ -112,6 +112,16 @@ import { AuthService } from '../../core/auth.service';
       color: var(--mat-sys-on-surface-variant);
       word-break: break-word;
     }
+
+    @media (max-width: 720px) {
+      .auth-page {
+        padding: 16px 12px;
+      }
+
+      .auth-card {
+        padding: 8px;
+      }
+    }
   `,
 })
 export class AuthPage {

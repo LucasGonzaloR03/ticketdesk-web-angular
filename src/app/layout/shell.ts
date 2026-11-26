@@ -24,6 +24,44 @@ import { HealthService } from '../features/settings/health.service';
     <mat-toolbar color="primary" class="toolbar">
       <a class="brand" routerLink="/tickets">TicketDesk <strong>AI</strong></a>
 
+      <button
+        mat-icon-button
+        class="menu-button"
+        [matMenuTriggerFor]="navMenu"
+        aria-label="Abrir menú de navegación"
+      >
+        <mat-icon>menu</mat-icon>
+      </button>
+      <mat-menu #navMenu="matMenu">
+        <div class="menu-info">{{ user()?.email }} · {{ user()?.role }}</div>
+        <a mat-menu-item routerLink="/tickets" routerLinkActive="active-menu">
+          <mat-icon>receipt_long</mat-icon>
+          <span>Mis tickets</span>
+        </a>
+        <a mat-menu-item routerLink="/tickets/new" routerLinkActive="active-menu">
+          <mat-icon>add</mat-icon>
+          <span>Nuevo</span>
+        </a>
+        <a mat-menu-item routerLink="/tickets/import" routerLinkActive="active-menu">
+          <mat-icon>upload_file</mat-icon>
+          <span>Importar</span>
+        </a>
+        @if (isAgent()) {
+          <a mat-menu-item routerLink="/agent" routerLinkActive="active-menu">
+            <mat-icon>support_agent</mat-icon>
+            <span>Panel agente</span>
+          </a>
+        }
+        <a mat-menu-item routerLink="/settings/ai" routerLinkActive="active-menu">
+          <mat-icon>smart_toy</mat-icon>
+          <span>Config. IA</span>
+        </a>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Cerrar sesión</span>
+        </button>
+      </mat-menu>
+
       <nav class="nav" aria-label="Navegación principal">
         <a mat-button routerLink="/tickets" routerLinkActive="active">Mis tickets</a>
         <a mat-button routerLink="/tickets/new" routerLinkActive="active">Nuevo</a>
@@ -36,10 +74,12 @@ import { HealthService } from '../features/settings/health.service';
 
       <span class="spacer"></span>
 
-      <button mat-button [matMenuTriggerFor]="userMenu">
-        <mat-icon>account_circle</mat-icon>
-        {{ user()?.name }}
-      </button>
+      <div class="user-menu">
+        <button mat-button [matMenuTriggerFor]="userMenu">
+          <mat-icon>account_circle</mat-icon>
+          {{ user()?.name }}
+        </button>
+      </div>
       <mat-menu #userMenu="matMenu">
         <div class="menu-info">{{ user()?.email }} · {{ user()?.role }}</div>
         <button mat-menu-item (click)="logout()">
@@ -87,6 +127,16 @@ import { HealthService } from '../features/settings/health.service';
       font-size: 1.1rem;
       letter-spacing: 0.02em;
       margin-right: 16px;
+      white-space: nowrap;
+    }
+
+    .menu-button {
+      display: none;
+    }
+
+    .user-menu {
+      display: flex;
+      align-items: center;
     }
 
     .brand strong {
@@ -135,8 +185,29 @@ import { HealthService } from '../features/settings/health.service';
     }
 
     @media (max-width: 720px) {
-      .nav {
+      .toolbar {
+        padding: 0 8px;
+        gap: 4px;
+      }
+
+      .brand {
+        margin-right: 0;
+        font-size: 1rem;
+      }
+
+      .menu-button {
+        display: inline-flex;
+      }
+
+      .nav,
+      .user-menu {
         display: none;
+      }
+
+      .footer {
+        justify-content: center;
+        text-align: center;
+        padding: 12px;
       }
     }
   `,

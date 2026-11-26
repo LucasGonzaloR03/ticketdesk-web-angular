@@ -55,7 +55,7 @@ import { TicketService } from '../tickets/ticket.service';
   styles: `
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
       gap: 16px;
     }
 
@@ -64,6 +64,12 @@ import { TicketService } from '../tickets/ticket.service';
       border-radius: 999px;
       border: 1px solid var(--mat-sys-outline-variant);
       font-size: 0.72rem;
+    }
+
+    @media (max-width: 720px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
     }
   `,
 })

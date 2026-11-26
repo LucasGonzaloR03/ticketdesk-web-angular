@@ -136,7 +136,7 @@ import { TicketService } from './ticket.service';
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
       gap: 16px;
     }
 
@@ -177,6 +177,25 @@ import { TicketService } from './ticket.service';
 
     .empty {
       grid-column: 1 / -1;
+    }
+
+    @media (max-width: 720px) {
+      header a {
+        flex: 1 1 140px;
+      }
+
+      .filters {
+        padding: 12px;
+        gap: 8px;
+      }
+
+      .filters mat-form-field {
+        width: 100%;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
     }
   `,
 })

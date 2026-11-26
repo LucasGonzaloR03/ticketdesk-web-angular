@@ -275,6 +275,16 @@ import { TicketService } from './ticket.service';
     .duplicate .muted {
       font-size: 0.78rem;
     }
+
+    @media (max-width: 720px) {
+      .tab-content {
+        padding: 12px 0;
+      }
+
+      .badges {
+        gap: 6px;
+      }
+    }
   `,
 })
 export class TicketDetailPage implements OnInit {

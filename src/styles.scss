@@ -43,9 +43,22 @@ body {
 }
 
 .page {
+  box-sizing: border-box;
+  width: 100%;
   max-width: 1120px;
   margin: 0 auto;
   padding: 24px;
+  overflow-wrap: anywhere;
+}
+
+.active-menu {
+  font-weight: 600;
+}
+
+input,
+textarea,
+select {
+  max-width: 100%;
 }
 
 .stack {
@@ -76,4 +89,28 @@ body {
 .error-text {
   color: var(--mat-sys-error);
   font-size: 0.8rem;
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 16px 12px;
+  }
+
+  .stack {
+    gap: 12px;
+  }
+
+  .row {
+    gap: 8px;
+  }
+
+  .page .row > mat-form-field {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .page h1 {
+    font-size: 1.4rem;
+  }
 }
