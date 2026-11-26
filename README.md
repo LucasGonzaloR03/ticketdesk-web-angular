@@ -70,5 +70,6 @@ Usuarios: `cliente@ticketdesk.dev`, `agente@ticketdesk.dev`, `admin@ticketdesk.d
 2. Logout y login como agente.
 3. Panel agente → tomar ticket → abrir detalle.
 4. Pestañas: **Comentarios**, **Gestión**, **Historial**, **IA** y **Duplicados**.
-5. Si la IA pide clave, guardar `provider=mock` con cualquier clave en **Config. IA**.
-6. Desde **Importar** se elige PDF o correo `.eml`, se revisan los campos sugeridos y se confirma; el ticket queda con el badge `PDF` o `EMAIL`.
+5. En **Config. IA**, elegir `Demo (Mock)` en el select de proveedor: no pide clave y ya viene sin modelo. Para un proveedor real, elegir OpenAI, Anthropic o Gemini; el select de modelo se llena desde `GET /api/ai/providers` y precarga el modelo por defecto.
+6. Al pegar una api key se sugiere el proveedor por su prefijo (`sk-ant-`, `sk-`, `AIza`); la SPA **no cambia sola**: hay que click en **Usar …** para confirmar. La clave se cifra en el backend y la API sólo devuelve una pista (`****1234`).
+7. Desde **Importar** se elige PDF o correo `.eml`, se revisan los campos sugeridos y se confirma; el ticket queda con el badge `PDF` o `EMAIL`.

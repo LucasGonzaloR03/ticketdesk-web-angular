@@ -1,13 +1,15 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
-import { AiSettingsService } from './ai-settings.service';
+import { AiSettingsService, sugerirProviderPorClave } from './ai-settings.service';
 
 @Component({
   selector: 'app-ai-settings-page',
@@ -19,6 +21,7 @@ import { AiSettingsService } from './ai-settings.service';
     MatCardModule,
     MatFormFieldModule,
     MatInputModule,
+    MatSelectModule,
   ],
   template: `
     <section class="page">
@@ -26,7 +29,7 @@ import { AiSettingsService } from './ai-settings.service';
         <mat-card-header>
           <mat-card-title>Configuración de IA</mat-card-title>
           <mat-card-subtitle>
-            La clave se cifra con AES-GCM; la API sólo devuelve una pista.
+            Elegí proveedor y modelo. La clave se cifra con AES-GCM; la API sólo devuelve una pista.
           </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
@@ -50,24 +53,53 @@ import { AiSettingsService } from './ai-settings.service';
           <form [formGroup]="form" (ngSubmit)="save()" class="stack form">
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Provider</mat-label>
-              <input matInput formControlName="provider" placeholder="mock / openai" />
-              @if (form.controls.provider.invalid && form.controls.provider.touched) {
-                <mat-error>El provider es obligatorio.</mat-error>
+              <mat-select formControlName="provider" (selectionChange)="cambioProvider($event.value)">
+                @for (p of catalog(); track p.id) {
+                  <mat-option [value]="p.id">{{ p.nombre }}</mat-option>
+                }
+              </mat-select>
+              @if (provider(); as p) {
+                <mat-hint>{{ p.descripcion }}</mat-hint>
               }
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Modelo (opcional)</mat-label>
-              <input matInput formControlName="model" />
-            </mat-form-field>
+            @if (modelos().length > 0) {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Modelo</mat-label>
+                <mat-select formControlName="model">
+                  @for (modelo of modelos(); track modelo) {
+                    <mat-option [value]="modelo">{{ modelo }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Api key</mat-label>
-              <input matInput type="password" formControlName="apiKey" autocomplete="off" />
-              @if (form.controls.apiKey.invalid && form.controls.apiKey.touched) {
-                <mat-error>Necesitás una clave para guardar.</mat-error>
+            @if (requiereClave()) {
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Api key</mat-label>
+                <input
+                  matInput
+                  type="password"
+                  formControlName="apiKey"
+                  autocomplete="off"
+                  (input)="alEscribirClave()"
+                />
+                @if (form.controls.apiKey.invalid && form.controls.apiKey.touched) {
+                  <mat-error>Necesitás una clave para guardar.</mat-error>
+                }
+              </mat-form-field>
+
+              @if (sugerencia(); as id) {
+                <div class="sugerencia">
+                  <span>La clave parece ser de {{ nombreProveedor(id) }}.</span>
+                  <button mat-button type="button" (click)="aplicarSugerencia()">
+                    Usar {{ nombreProveedor(id) }}
+                  </button>
+                </div>
               }
-            </mat-form-field>
+            } @else {
+              <p class="muted">Este proveedor no necesita clave.</p>
+            }
 
             <div class="row">
               <button mat-flat-button type="submit">Guardar</button>
@@ -93,29 +125,78 @@ import { AiSettingsService } from './ai-settings.service';
       background: var(--mat-sys-surface-container-low);
       margin-top: 12px;
     }
+
+    .sugerencia {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: var(--mat-sys-surface-container-low);
+    }
   `,
 })
 export class AiSettingsPage implements OnInit {
   private readonly settingsService = inject(AiSettingsService);
 
   readonly settings = this.settingsService.settings;
+  readonly catalog = this.settingsService.catalog;
+  readonly providerId = signal('MOCK');
+  readonly provider = computed(() => this.catalog().find((p) => p.id === this.providerId()) ?? null);
+  readonly requiereClave = computed(() => this.provider()?.requiereApiKey ?? false);
+  readonly modelos = computed(() => this.provider()?.modelos ?? []);
+  readonly sugerencia = signal<string | null>(null);
 
   readonly form = new FormGroup({
-    provider: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(100)] }),
+    provider: new FormControl('MOCK', { nonNullable: true, validators: [Validators.required] }),
     model: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(100)] }),
-    apiKey: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(512)] }),
+    apiKey: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(512)] }),
   });
 
   ngOnInit(): void {
-    this.settingsService.load().subscribe((settings) => {
-      if (settings) {
-        this.form.reset({
-          provider: settings.provider,
-          model: settings.model ?? '',
-          apiKey: '',
-        });
-      }
+    forkJoin({
+      catalog: this.settingsService.loadCatalog(),
+      settings: this.settingsService.load(),
+    }).subscribe(({ catalog, settings }) => {
+      const ids = catalog.map((p) => p.id);
+      const id = settings?.provider && ids.includes(settings.provider) ? settings.provider : 'MOCK';
+      this.form.reset(
+        { provider: id, model: settings?.model ?? '', apiKey: '' },
+        { emitEvent: false },
+      );
+      this.providerId.set(id);
+      this.actualizarValidadoresClave();
     });
+  }
+
+  cambioProvider(id: string): void {
+    this.providerId.set(id);
+    const proveedor = this.catalog().find((p) => p.id === id);
+    this.form.controls.model.setValue(proveedor?.modeloPorDefecto ?? '', { emitEvent: false });
+    this.form.controls.apiKey.setValue('', { emitEvent: false });
+    this.sugerencia.set(null);
+    this.actualizarValidadoresClave();
+  }
+
+  alEscribirClave(): void {
+    const sugerido = sugerirProviderPorClave(this.form.controls.apiKey.value, this.catalog());
+    this.sugerencia.set(sugerido && sugerido !== this.providerId() ? sugerido : null);
+  }
+
+  aplicarSugerencia(): void {
+    const id = this.sugerencia();
+    if (!id) {
+      return;
+    }
+    const clave = this.form.controls.apiKey.value;
+    this.form.controls.provider.setValue(id, { emitEvent: false });
+    this.cambioProvider(id);
+    this.form.controls.apiKey.setValue(clave);
+  }
+
+  nombreProveedor(id: string): string {
+    return this.catalog().find((p) => p.id === id)?.nombre ?? id;
   }
 
   save(): void {
@@ -123,10 +204,13 @@ export class AiSettingsPage implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
-
     const { provider, model, apiKey } = this.form.getRawValue();
     this.settingsService
-      .save({ provider, model: model || undefined, apiKey })
+      .save({
+        provider,
+        model: model || undefined,
+        apiKey: this.requiereClave() ? apiKey : undefined,
+      })
       .subscribe(() => this.form.controls.apiKey.reset(''));
   }
 
@@ -134,6 +218,22 @@ export class AiSettingsPage implements OnInit {
     if (!window.confirm('¿Eliminar la configuración de IA?')) {
       return;
     }
-    this.settingsService.remove().subscribe();
+    this.settingsService.remove().subscribe((ok) => {
+      if (!ok) {
+        return;
+      }
+      this.form.reset({ provider: 'MOCK', model: '', apiKey: '' }, { emitEvent: false });
+      this.providerId.set('MOCK');
+      this.sugerencia.set(null);
+      this.actualizarValidadoresClave();
+    });
+  }
+
+  private actualizarValidadoresClave(): void {
+    const validadores = this.requiereClave()
+      ? [Validators.required, Validators.maxLength(512)]
+      : [Validators.maxLength(512)];
+    this.form.controls.apiKey.setValidators(validadores);
+    this.form.controls.apiKey.updateValueAndValidity({ emitEvent: false });
   }
 }

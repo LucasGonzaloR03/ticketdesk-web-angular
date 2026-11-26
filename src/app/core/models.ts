@@ -119,8 +119,22 @@ export interface DuplicateResponse {
   similitud: number;
 }
 
+export interface AiProvider {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  requiereApiKey: boolean;
+  modelos: string[];
+  modeloPorDefecto: string | null;
+  prefijosKey: string[];
+}
+
+export interface AiProviderCatalogResponse {
+  providers: AiProvider[];
+}
+
 export interface AiSettingsResponse {
-  provider: string;
+  provider: string | null;
   model: string | null;
   keyHint: string | null;
   updatedAt: string | null;
@@ -129,7 +143,7 @@ export interface AiSettingsResponse {
 export interface AiSettingsRequest {
   provider: string;
   model?: string;
-  apiKey: string;
+  apiKey?: string;
 }
 
 export interface ClassificationResponse {

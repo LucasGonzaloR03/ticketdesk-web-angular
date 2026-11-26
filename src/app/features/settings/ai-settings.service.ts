@@ -3,8 +3,34 @@ import { inject, Injectable, signal } from '@angular/core';
 import { catchError, map, Observable, of, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AiSettingsRequest, AiSettingsResponse } from '../../core/models';
+import {
+  AiProvider,
+  AiProviderCatalogResponse,
+  AiSettingsRequest,
+  AiSettingsResponse,
+} from '../../core/models';
 import { NotificationsService } from '../../core/notifications.service';
+
+/**
+ * Sugiere un proveedor por el prefijo de la clave, como hace el backend.
+ * El prefijo más específico gana (sk-ant- antes que sk-). Es sólo una
+ * sugerencia: la interfaz siempre pide confirmación.
+ */
+export function sugerirProviderPorClave(
+  apiKey: string,
+  providers: AiProvider[],
+): string | null {
+  const clave = apiKey?.trim();
+  if (!clave) {
+    return null;
+  }
+  return providers
+    .flatMap((provider) =>
+      provider.prefijosKey.map((prefijo) => ({ prefijo, id: provider.id })),
+    )
+    .sort((a, b) => b.prefijo.length - a.prefijo.length)
+    .find((candidato) => clave.startsWith(candidato.prefijo))?.id ?? null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class AiSettingsService {
@@ -13,7 +39,21 @@ export class AiSettingsService {
   private readonly url = `${environment.apiUrl}/api/me/ai-settings`;
 
   readonly settings = signal<AiSettingsResponse | null>(null);
+  readonly catalog = signal<AiProvider[]>([]);
   readonly loading = signal(false);
+
+  loadCatalog(): Observable<AiProvider[]> {
+    return this.http
+      .get<AiProviderCatalogResponse>(`${environment.apiUrl}/api/ai/providers`)
+      .pipe(
+        map((respuesta) => respuesta.providers),
+        tap((providers) => this.catalog.set(providers)),
+        catchError((error) => {
+          this.notifications.error(error);
+          return of([]);
+        }),
+      );
+  }
 
   load(): Observable<AiSettingsResponse | null> {
     this.loading.set(true);
