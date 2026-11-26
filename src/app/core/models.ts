@@ -2,6 +2,7 @@ export type Role = 'CLIENT' | 'AGENT' | 'ADMIN';
 export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type Category = 'BILLING' | 'TECHNICAL' | 'ACCOUNT' | 'OTHER';
+export type TicketSource = 'MANUAL' | 'PDF';
 
 export interface AuthResponse {
   token: string;
@@ -37,6 +38,7 @@ export interface TicketResponse {
   summary: string | null;
   createdAt: string;
   updatedAt: string;
+  source?: TicketSource;
 }
 
 export interface CreateTicketRequest {
@@ -44,6 +46,18 @@ export interface CreateTicketRequest {
   descripcion: string;
   priority: Priority;
   category: Category;
+  source?: TicketSource;
+}
+
+export interface TicketImportPreview {
+  titulo: string;
+  descripcion: string;
+  priority: Priority;
+  category: Category;
+  nombreArchivo: string | null;
+  paginas: number;
+  caracteres: number;
+  recortado: boolean;
 }
 
 export interface UpdateTicketRequest {

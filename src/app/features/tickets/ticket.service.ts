@@ -11,6 +11,7 @@ import {
   DuplicateResponse,
   TicketEventResponse,
   TicketFilters,
+  TicketImportPreview,
   TicketResponse,
   UpdateTicketRequest,
 } from '../../core/models';
@@ -58,6 +59,17 @@ export class TicketService {
         this.tickets.update((items) => [created, ...items]);
         this.notifications.success('Ticket creado correctamente');
       }),
+      catchError((error) => {
+        this.notifications.error(error);
+        return of(null);
+      }),
+    );
+  }
+
+  importPdf(file: File): Observable<TicketImportPreview | null> {
+    const datos = new FormData();
+    datos.append('file', file, file.name);
+    return this.http.post<TicketImportPreview>(`${this.base}/import`, datos).pipe(
       catchError((error) => {
         this.notifications.error(error);
         return of(null);

@@ -29,6 +29,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/tickets/ticket-new').then((m) => m.TicketNewPage),
       },
       {
+        path: 'tickets/import',
+        loadComponent: () => import('./features/tickets/ticket-import').then((m) => m.TicketImportPage),
+      },
+      {
         path: 'tickets/:id',
         loadComponent: () => import('./features/tickets/ticket-detail').then((m) => m.TicketDetailPage),
       },
