@@ -58,6 +58,7 @@ export interface TicketImportPreview {
   paginas: number;
   caracteres: number;
   recortado: boolean;
+  provider?: string | null;
 }
 
 export interface TicketEmailPreview {
@@ -71,6 +72,7 @@ export interface TicketEmailPreview {
   caracteres: number;
   adjuntos: number;
   recortado: boolean;
+  provider?: string | null;
 }
 
 export interface UpdateTicketRequest {

@@ -39,7 +39,7 @@ En Vercel, cargar `API_URL` en **Project → Settings → Environment Variables*
 - `src/app/features`: pantallas de auth, tickets, panel del agente y settings de IA, con sus servicios.
 - `src/app/layout/shell.ts`: toolbar con navegación por rol y footer que consulta `/health`.
 - `src/environments/environment.ts`: único punto con la URL de la API (generado en cada build).
-- `src/app/features/tickets/ticket-import.ts`: carga de un PDF o un correo `.eml`, preview editable y alta del ticket con `source: 'PDF'` o `'EMAIL'`.
+- `src/app/features/tickets/ticket-import.ts`: carga de un PDF o un correo `.eml`, preview editable y alta del ticket con `source: 'PDF'` o `'EMAIL'`. Si el backend indica `provider`, muestra `Sugerido por …`.
 
 Decisiones de diseño:
 
@@ -72,4 +72,4 @@ Usuarios: `cliente@ticketdesk.dev`, `agente@ticketdesk.dev`, `admin@ticketdesk.d
 4. Pestañas: **Comentarios**, **Gestión**, **Historial**, **IA** y **Duplicados**.
 5. En **Config. IA**, elegir `Demo (Mock)` en el select de proveedor: no pide clave y ya viene sin modelo. Para un proveedor real, elegir OpenAI, Anthropic o Gemini; el select de modelo se llena desde `GET /api/ai/providers` y precarga el modelo por defecto.
 6. Al pegar una api key se sugiere el proveedor por su prefijo (`sk-ant-`, `sk-`, `AIza`); la SPA **no cambia sola**: hay que click en **Usar …** para confirmar. La clave se cifra en el backend y la API sólo devuelve una pista (`****1234`).
-7. Desde **Importar** se elige PDF o correo `.eml`, se revisan los campos sugeridos y se confirma; el ticket queda con el badge `PDF` o `EMAIL`.
+7. Desde **Importar** se elige PDF o correo `.eml`, se revisan los campos sugeridos y se confirma; el ticket queda con el badge `PDF` o `EMAIL`. Con `MOCK` se usan heurísticas; con un proveedor real configurado, el preview dice `Sugerido por …` y los campos vienen de la IA. Ante un error de la IA se vuelve a las heurísticas sin romper la pantalla.

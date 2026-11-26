@@ -61,6 +61,9 @@ type Modo = 'PDF' | 'EMAIL';
           @if (preview(); as datos) {
             <form [formGroup]="form" (ngSubmit)="confirmar()" class="stack form">
               <p class="muted">{{ resumen() }}</p>
+              @if (datos.provider) {
+                <p class="sugerencia">Sugerido por {{ datos.provider }} · revisá los campos antes de crear.</p>
+              }
 
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Título</mat-label>
@@ -120,6 +123,12 @@ type Modo = 'PDF' | 'EMAIL';
     .activo {
       font-weight: 600;
       text-decoration: underline;
+    }
+
+    .sugerencia {
+      margin: 0;
+      font-size: 14px;
+      color: var(--mat-sys-primary, #3f51b5);
     }
   `,
 })
