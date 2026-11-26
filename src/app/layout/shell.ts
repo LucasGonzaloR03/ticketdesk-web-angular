@@ -27,7 +27,7 @@ import { HealthService } from '../features/settings/health.service';
       <nav class="nav" aria-label="Navegación principal">
         <a mat-button routerLink="/tickets" routerLinkActive="active">Mis tickets</a>
         <a mat-button routerLink="/tickets/new" routerLinkActive="active">Nuevo</a>
-        <a mat-button routerLink="/tickets/import" routerLinkActive="active">Importar PDF</a>
+        <a mat-button routerLink="/tickets/import" routerLinkActive="active">Importar</a>
         @if (isAgent()) {
           <a mat-button routerLink="/agent" routerLinkActive="active">Panel agente</a>
         }

@@ -39,7 +39,7 @@ import { TicketService } from './ticket.service';
         </a>
         <a mat-stroked-button routerLink="/tickets/import">
           <mat-icon>upload_file</mat-icon>
-          Importar PDF
+          Importar
         </a>
       </header>
 
@@ -97,6 +97,9 @@ import { TicketService } from './ticket.service';
                   <span class="badge">{{ ticket.category }}</span>
                   @if (ticket.source === 'PDF') {
                     <span class="badge">PDF</span>
+                  }
+                  @if (ticket.source === 'EMAIL') {
+                    <span class="badge">EMAIL</span>
                   }
                   @if (ticket.assigneeName) {
                     <span class="muted">Asignado a {{ ticket.assigneeName }}</span>

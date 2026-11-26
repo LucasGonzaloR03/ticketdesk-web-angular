@@ -9,6 +9,7 @@ import {
   CreateCommentRequest,
   CreateTicketRequest,
   DuplicateResponse,
+  TicketEmailPreview,
   TicketEventResponse,
   TicketFilters,
   TicketImportPreview,
@@ -70,6 +71,17 @@ export class TicketService {
     const datos = new FormData();
     datos.append('file', file, file.name);
     return this.http.post<TicketImportPreview>(`${this.base}/import`, datos).pipe(
+      catchError((error) => {
+        this.notifications.error(error);
+        return of(null);
+      }),
+    );
+  }
+
+  importEmail(file: File): Observable<TicketEmailPreview | null> {
+    const datos = new FormData();
+    datos.append('file', file, file.name);
+    return this.http.post<TicketEmailPreview>(`${this.base}/import-email`, datos).pipe(
       catchError((error) => {
         this.notifications.error(error);
         return of(null);

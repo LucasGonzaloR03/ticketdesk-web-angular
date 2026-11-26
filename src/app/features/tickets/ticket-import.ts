@@ -7,8 +7,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Router, RouterLink } from '@angular/router';
 
-import { Category, Priority, TicketImportPreview } from '../../core/models';
+import { Category, Priority, TicketEmailPreview, TicketImportPreview } from '../../core/models';
 import { TicketService } from './ticket.service';
+
+type Modo = 'PDF' | 'EMAIL';
 
 @Component({
   selector: 'app-ticket-import',
@@ -25,30 +27,40 @@ import { TicketService } from './ticket.service';
     <section class="page">
       <mat-card>
         <mat-card-header>
-          <mat-card-title>Importar ticket desde PDF</mat-card-title>
-          <mat-card-subtitle>Se extrae el texto y se sugieren campos. Revisá antes de crear.</mat-card-subtitle>
+          <mat-card-title>Importar ticket</mat-card-title>
+          <mat-card-subtitle>
+            Desde un PDF o un correo .eml. Revisá los campos sugeridos antes de crear.
+          </mat-card-subtitle>
         </mat-card-header>
         <mat-card-content>
+          <div class="row modos">
+            <button mat-button type="button" [class.activo]="modo() === 'PDF'" (click)="cambiarModo('PDF')">
+              PDF
+            </button>
+            <button mat-button type="button" [class.activo]="modo() === 'EMAIL'" (click)="cambiarModo('EMAIL')">
+              Correo .eml
+            </button>
+          </div>
+
           <div class="stack form">
-            <input type="file" accept="application/pdf,.pdf" (change)="seleccionar($event)" />
+            <input
+              type="file"
+              [attr.accept]="modo() === 'PDF' ? 'application/pdf,.pdf' : '.eml,message/rfc822'"
+              (change)="seleccionar($event)"
+            />
             <div class="row">
               <button mat-flat-button type="button" (click)="analizar()" [disabled]="!archivo || analyzing()">
-                Analizar PDF
+                {{ modo() === 'PDF' ? 'Analizar PDF' : 'Analizar correo' }}
               </button>
               @if (analyzing()) {
-                <span class="muted">Extrayendo texto…</span>
+                <span class="muted">Extrayendo datos…</span>
               }
             </div>
           </div>
 
           @if (preview(); as datos) {
             <form [formGroup]="form" (ngSubmit)="confirmar()" class="stack form">
-              <p class="muted">
-                {{ datos.nombreArchivo }} · {{ datos.paginas }} página(s) · {{ datos.caracteres }} caracteres
-                @if (datos.recortado) {
-                  <span> · texto recortado</span>
-                }
-              </p>
+              <p class="muted">{{ resumen() }}</p>
 
               <mat-form-field appearance="outline" class="full-width">
                 <mat-label>Título</mat-label>
@@ -100,6 +112,15 @@ import { TicketService } from './ticket.service';
     .form {
       padding-top: 16px;
     }
+
+    .modos {
+      padding-top: 8px;
+    }
+
+    .activo {
+      font-weight: 600;
+      text-decoration: underline;
+    }
   `,
 })
 export class TicketImportPage {
@@ -109,8 +130,10 @@ export class TicketImportPage {
   readonly priorities: Priority[] = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'];
   readonly categories: Category[] = ['BILLING', 'TECHNICAL', 'ACCOUNT', 'OTHER'];
 
+  readonly modo = signal<Modo>('PDF');
   readonly analyzing = signal(false);
-  readonly preview = signal<TicketImportPreview | null>(null);
+  readonly preview = signal<TicketImportPreview | TicketEmailPreview | null>(null);
+  readonly resumen = signal('');
   archivo: File | null = null;
 
   readonly form = new FormGroup({
@@ -120,10 +143,18 @@ export class TicketImportPage {
     category: new FormControl<Category>('OTHER', { nonNullable: true }),
   });
 
+  cambiarModo(modo: Modo): void {
+    this.modo.set(modo);
+    this.archivo = null;
+    this.preview.set(null);
+    this.resumen.set('');
+  }
+
   seleccionar(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.archivo = input.files?.[0] ?? null;
     this.preview.set(null);
+    this.resumen.set('');
   }
 
   analizar(): void {
@@ -131,18 +162,11 @@ export class TicketImportPage {
       return;
     }
     this.analyzing.set(true);
-    this.ticketsService.importPdf(this.archivo).subscribe((datos) => {
-      this.analyzing.set(false);
-      if (datos) {
-        this.preview.set(datos);
-        this.form.setValue({
-          titulo: datos.titulo,
-          descripcion: datos.descripcion,
-          priority: datos.priority,
-          category: datos.category,
-        });
-      }
-    });
+    if (this.modo() === 'EMAIL') {
+      this.ticketsService.importEmail(this.archivo).subscribe((datos) => this.aplicarPreview(datos));
+    } else {
+      this.ticketsService.importPdf(this.archivo).subscribe((datos) => this.aplicarPreview(datos));
+    }
   }
 
   confirmar(): void {
@@ -151,10 +175,47 @@ export class TicketImportPage {
       return;
     }
 
-    this.ticketsService.create({ ...this.form.getRawValue(), source: 'PDF' }).subscribe((created) => {
+    const source = this.modo() === 'EMAIL' ? 'EMAIL' : 'PDF';
+    this.ticketsService.create({ ...this.form.getRawValue(), source }).subscribe((created) => {
       if (created) {
         this.router.navigate(['/tickets', created.id]);
       }
     });
+  }
+
+  private aplicarPreview(datos: TicketImportPreview | TicketEmailPreview | null): void {
+    this.analyzing.set(false);
+    if (!datos) {
+      return;
+    }
+    this.preview.set(datos);
+    this.form.setValue({
+      titulo: datos.titulo,
+      descripcion: datos.descripcion,
+      priority: datos.priority,
+      category: datos.category,
+    });
+    this.resumen.set(this.resumenDe(datos));
+  }
+
+  private resumenDe(datos: TicketImportPreview | TicketEmailPreview): string {
+    const partes = [datos.nombreArchivo ?? 'archivo'];
+    if ('paginas' in datos) {
+      partes.push(`${datos.paginas} página(s)`);
+    }
+    partes.push(`${datos.caracteres} caracteres`);
+    if ('adjuntos' in datos) {
+      partes.push(`${datos.adjuntos} adjunto(s)`);
+      if (datos.remitente) {
+        partes.push(`De: ${datos.remitente}`);
+      }
+      if (datos.fecha) {
+        partes.push(`Fecha: ${datos.fecha}`);
+      }
+    }
+    if (datos.recortado) {
+      partes.push('texto recortado');
+    }
+    return partes.join(' · ');
   }
 }

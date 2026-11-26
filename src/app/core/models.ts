@@ -2,7 +2,7 @@ export type Role = 'CLIENT' | 'AGENT' | 'ADMIN';
 export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type Category = 'BILLING' | 'TECHNICAL' | 'ACCOUNT' | 'OTHER';
-export type TicketSource = 'MANUAL' | 'PDF';
+export type TicketSource = 'MANUAL' | 'PDF' | 'EMAIL';
 
 export interface AuthResponse {
   token: string;
@@ -57,6 +57,19 @@ export interface TicketImportPreview {
   nombreArchivo: string | null;
   paginas: number;
   caracteres: number;
+  recortado: boolean;
+}
+
+export interface TicketEmailPreview {
+  titulo: string;
+  descripcion: string;
+  priority: Priority;
+  category: Category;
+  remitente: string | null;
+  fecha: string | null;
+  nombreArchivo: string | null;
+  caracteres: number;
+  adjuntos: number;
   recortado: boolean;
 }
 

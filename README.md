@@ -39,7 +39,7 @@ En Vercel, cargar `API_URL` en **Project → Settings → Environment Variables*
 - `src/app/features`: pantallas de auth, tickets, panel del agente y settings de IA, con sus servicios.
 - `src/app/layout/shell.ts`: toolbar con navegación por rol y footer que consulta `/health`.
 - `src/environments/environment.ts`: único punto con la URL de la API (generado en cada build).
-- `src/app/features/tickets/ticket-import.ts`: carga de un PDF, preview editable y alta del ticket con `source: 'PDF'`.
+- `src/app/features/tickets/ticket-import.ts`: carga de un PDF o un correo `.eml`, preview editable y alta del ticket con `source: 'PDF'` o `'EMAIL'`.
 
 Decisiones de diseño:
 
@@ -71,4 +71,4 @@ Usuarios: `cliente@ticketdesk.dev`, `agente@ticketdesk.dev`, `admin@ticketdesk.d
 3. Panel agente → tomar ticket → abrir detalle.
 4. Pestañas: **Comentarios**, **Gestión**, **Historial**, **IA** y **Duplicados**.
 5. Si la IA pide clave, guardar `provider=mock` con cualquier clave en **Config. IA**.
-6. Desde **Importar PDF** se sube un archivo, se revisan los campos sugeridos y se confirma; el ticket queda con el badge `PDF`.
+6. Desde **Importar** se elige PDF o correo `.eml`, se revisan los campos sugeridos y se confirma; el ticket queda con el badge `PDF` o `EMAIL`.
