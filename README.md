@@ -1,59 +1,72 @@
-# TicketdeskWebAngular
+# TicketDesk AI · Web
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.31.
+Frontend Angular 21 + Angular Material para la API de tickets de [TicketDesk AI](../TicketDesk%20AI). Es una SPA con login, alta y listado de tickets, detalle con comentarios/historial/IA/duplicados, panel del agente y configuración de IA.
 
-## Development server
+## Requisitos
 
-To start a local development server, run:
+- Node `22.19.0` (Angular 21 no acepta versiones posteriores a `22.22.x` en esta demo).
+- npm (el repo fija `packageManager: npm@11.10.1`).
+- La API corriendo en `http://localhost:8080` (ver README del backend).
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Scripts
 
 ```bash
-ng generate component component-name
+npm ci
+npm start                       # http://localhost:4200
+npm run build                   # genera dist/ticketdesk-web-angular/browser
+npm test -- --watch=false
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+`npm run build` ejecuta antes el `prebuild`: un script que escribe `src/environments/environment.ts` con la URL de la API.
+
+## Configuración de la API
+
+| Variable | Uso | Default |
+| --- | --- | --- |
+| `API_URL` | URL base de la API, se usa durante el build | `http://localhost:8080` |
+
+Ejemplo para apuntar al backend desplegado en Render:
 
 ```bash
-ng generate --help
+API_URL=https://<API_EN_RENDER>.onrender.com npm run build
 ```
 
-## Building
+En Vercel, cargar `API_URL` en **Project → Settings → Environment Variables** y hacer un nuevo deploy: el valor queda grabado en el bundle.
 
-To build the project run:
+## Estructura
 
-```bash
-ng build
-```
+- `src/app/core`: modelos, sesión (`sessionStorage`), auth, interceptor JWT, guards y notificaciones.
+- `src/app/features`: pantallas de auth, tickets, panel del agente y settings de IA, con sus servicios.
+- `src/app/layout/shell.ts`: toolbar con navegación por rol y footer que consulta `/health`.
+- `src/environments/environment.ts`: único punto con la URL de la API (generado en cada build).
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Decisiones de diseño:
 
-## Running unit tests
+- Los guards redirigen a `/login` si no hay sesión y a `/tickets` si el rol no tiene permiso.
+- El JWT se guarda en `sessionStorage`; se cierra al cerrar la pestaña.
+- Los errores de la API se muestran con snackbars leyendo `ProblemDetail` (`detail`, `title` y errores de validación).
+- No hay expresiones en templates: todo cálculo o condición vive en el componente.
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Deploy en Vercel
 
-```bash
-ng test
-```
+`vercel.json` define:
 
-## Running end-to-end tests
+- `buildCommand: npm run build`.
+- `outputDirectory: dist/ticketdesk-web-angular/browser`.
+- Rewrite `/(.*) → /index.html` para que las rutas SPA funcionen al recargar.
 
-For end-to-end (e2e) testing, run:
+Además, el backend debe incluir la URL de Vercel en `CORS_ALLOWED_ORIGINS`. Usar `localhost:4200` (no `127.0.0.1`) en desarrollo: si el origin no coincide, el preflight da `403`.
 
-```bash
-ng e2e
-```
+## CI
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+`.github/workflows/ci.yml` instala con `npm ci`, compila y corre los tests con Node 22.19.0 en cada push y PR.
 
-## Additional Resources
+## Demo
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Usuarios: `cliente@ticketdesk.dev`, `agente@ticketdesk.dev`, `admin@ticketdesk.dev`; password `demo1234`.
+
+1. Login como cliente y crear un ticket.
+2. Logout y login como agente.
+3. Panel agente → tomar ticket → abrir detalle.
+4. Pestañas: **Comentarios**, **Gestión**, **Historial**, **IA** y **Duplicados**.
+5. Si la IA pide clave, guardar `provider=mock` con cualquier clave en **Config. IA**.
